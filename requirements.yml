@@ -2,6 +2,7 @@ name: img
 channels:
   - plotly
   - conda-forge
+  - anaconda
 dependencies:
   - numpy
   - python=3.10
@@ -11,4 +12,5 @@ dependencies:
   - scipy
   - tqdm
   - plotly
+  - pillow
 prefix: C:\Users\vu\anaconda3\envs\img

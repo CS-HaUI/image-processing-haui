@@ -12,7 +12,8 @@ class Plot:
                  figsize= (10, 10),
                  show_type = [None],
                  show_axis = [None],
-                 show_title= [None]):
+                 show_title= [None],
+                 init_fig  = True):
         self.nrows = nrows
         self.ncols = ncols
         self.images = images
@@ -20,7 +21,8 @@ class Plot:
         self.show_type = show_type
         self.show_axis = show_axis
         self.show_title= show_title
-        self.__init_fig()
+        if init_fig:
+            self.__init_fig()
         
     
     def __init_fig(self):
