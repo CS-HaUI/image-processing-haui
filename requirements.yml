@@ -1,11 +1,17 @@
 name: img
 channels:
+  - plotly
   - conda-forge
+  - anaconda
 dependencies:
-  - python=3.10
   - numpy
-  - scipy
+  - python=3.10
   - opencv
-  - matplotlib
   - scikit-image
-prefix: /home/toilavu/mambaforge/envs/img
+  - matplotlib
+  - scipy
+  - tqdm
+  - plotly
+  - pillow
+  - django
+prefix: C:\Users\vu\anaconda3\envs\img
