@@ -158,3 +158,10 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# Không tải ảnh trong thư mục data/raw/
+data/raw/*
+# Không tải file json trong thư mục data/json/
+data/json/*
+
+visuallization/*.png
