@@ -164,4 +164,4 @@ data/raw/*
 # Không tải file json trong thư mục data/json/
 data/json/*
 
-visuallization/*.png
+visualization/*.png
