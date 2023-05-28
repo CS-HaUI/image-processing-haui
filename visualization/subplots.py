@@ -30,6 +30,8 @@ class Plot:
             if self.show_type[0] == 'GRAY':
                 self.images[0] = cv2.cvtColor(self.images[0], cv2.COLOR_RGB2GRAY)
                 plt.imshow(self.images[0], cmap='gray')
+            elif self.show_type[0] == "RGB":
+                plt.imshow(self.images[0][:, :, ::-1])
             else:
                 plt.imshow(self.images[0])
             plt.axis(self.show_axis[0])
@@ -41,6 +43,8 @@ class Plot:
                 for index, image in enumerate(self.images):
                     if self.show_type[index] == 'GRAY' or self.show_type[index] == 'LBP':
                         ax[index].imshow(image, cmap='gray')
+                    elif self.show_type[index] == "RGB":
+                        ax[index].imshow(image[:, :, ::-1])
                     else:
                         ax[index].imshow(image)
                     ax[index].axis(self.show_axis[index])
@@ -51,6 +55,8 @@ class Plot:
                     for jndex, value in enumerate(list):
                         if self.show_type[index][jndex] == 'GRAY' or self.show_type[index][jndex] == 'LBP':
                             ax[index][jndex].imshow(value, cmap='gray')
+                        elif self.show_type[index][jndex] == "RGB":
+                            ax[index][jndex].imshow(value[:, :, ::-1])
                         else:
                             ax[index][jndex].imshow(value)
                         ax[index][jndex].axis(self.show_axis[index][jndex])  

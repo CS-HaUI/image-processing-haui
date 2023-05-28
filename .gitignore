@@ -160,8 +160,9 @@ cython_debug/
 #.idea/
 
 # Không tải ảnh trong thư mục data/raw/
-data/raw/*
 # Không tải file json trong thư mục data/json/
-data/json/*
+data/*
 
 visualization/*.png
+visualization/demo/
+visualization/data/
