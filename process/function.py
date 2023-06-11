@@ -6,6 +6,10 @@ import json
 from tqdm import tqdm
 import shutil
 from scipy.spatial.distance import cdist
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from skimage.feature import local_binary_pattern
+from sklearn.svm import SVC
 
 
 class BaseImage(object):
@@ -70,12 +74,16 @@ class LBP(BaseImage):
                  json_path = "",
                  save= False,
                  lim = None,
-                 move= True):
+                 move= True,
+                 live= False,
+                 image_live = None):
         super().__init__(path, types, size, lim, move)
 
 
 
         self.size = size
+        self.__live = live
+        self.raw_image = image_live
         self._map8 = self.__genBIT(256)
         self._map4 = self.__genBIT(16)
         if is_json:
@@ -88,6 +96,8 @@ class LBP(BaseImage):
             
         if save:
             self.__save(json_data, json_path)
+        
+    
 
 
 
@@ -108,17 +118,28 @@ class LBP(BaseImage):
     
     def __get(self):
         raw = self.get_images()
+        if self.__live:
+            raw = self.raw_image
+            raw = np.expand_dims(raw, axis=0)
+        # print(raw.shape)
+    
         feature = []
-        for image in tqdm(raw, "extract feature"):         
+        # for image in tqdm(raw, "extract feature"): 
+        for image in raw:        
             hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
             hsv_hist = []
-
+            copy_hsv = hsv.copy()
+            copy_hsv_hist = []
             for channel in range(3):
-                hsv[:, :, channel] = self.__lbp(hsv[:, :, channel])
+                hsv[:, :, channel] = local_binary_pattern(hsv[:, :, channel], 8, 1, method='uniform')
                 hsv_hist.append(self.__histogram(hsv[:, :, channel]))
 
+                copy_hsv[:, :, channel] = local_binary_pattern(copy_hsv[:, :, channel], 4, 1, method='uniform')
+                copy_hsv_hist.append(self.__histogram(copy_hsv[:, :, channel]))
+
             hsv_hist = np.asarray(hsv_hist).reshape(-1)
-            feature.append(hsv_hist)
+            copy_hsv_hist = np.asarray(copy_hsv_hist).reshape(-1)
+            feature.append(np.concatenate((hsv_hist, copy_hsv_hist)))
 
         return np.asarray(feature)
             
@@ -189,163 +210,3 @@ class LBP(BaseImage):
         return self.__feature
     
 
-class FaceRecognition:
-    def __init__(self,
-                 config = "data/JSON/config.json",
-                 data_json= "data/JSON/data.json",
-                 path_json= "data/JSON/path.json",
-                 labels_json= "data/JSON/labels.json",
-                 KNN = 13) -> None:
-        self.obj = json.load(open(config))
-        self.vector_feature = np.asarray(json.load(open(data_json))).astype(float)
-        self.vector_path    = np.asarray(json.load(open(path_json))).astype(str)
-        self.vector_labels    = np.asarray(json.load(open(labels_json))).astype(int)
-        self.data_json = data_json
-        self.path_json = path_json
-        self.labels_json = labels_json
-        self.knn = KNN
-        
-    def fit(self):
-
-        batch = self.obj['batch']
-
-        # FACE
-        face = self.obj['train']['face']
-        number_face = self.obj['train']['img_face']
-
-        for image in tqdm(range(0, number_face, batch), "Extract Face"):
-            lbp_face = LBP(path= face, size= (112, 112), lim= batch, move= True)
-            if lbp_face.feature().shape[0] == 0:
-                continue
-            if self.vector_feature.shape[0] == 0:
-                self.vector_feature = lbp_face.feature()
-            else:
-                self.vector_feature = np.concatenate((self.vector_feature, lbp_face.feature()))
-            if self.vector_path.shape[0] == 0:
-                self.vector_path = lbp_face.get_paths()
-            else:
-                self.vector_path = np.concatenate((self.vector_path, lbp_face.get_paths()))
-            if self.vector_labels.shape[0] == 0:
-                self.vector_labels = np.full((lbp_face.get_paths().shape[0]), 1)
-            else:
-                self.vector_labels = np.concatenate((self.vector_labels, np.full((lbp_face.get_paths().shape[0]), 1)))
-
-            
-        # NONFACE
-        nonface = self.obj['train']['nonface']
-        number_nonface = self.obj['train']['img_nonface']
-
-        for image in tqdm(range(0, number_nonface, batch), "Extract Nonface"):
-            lbp_nonface = LBP(path= nonface, size= (112, 112), lim= batch, move= True)
-            if lbp_nonface.feature().shape[0] == 0:
-                continue
-            if self.vector_feature.shape[0] == 0:
-                self.vector_feature = lbp_nonface.feature()
-            else:
-                self.vector_feature = np.concatenate((self.vector_feature, lbp_nonface.feature()))
-            if self.vector_path.shape[0] == 0:
-                self.vector_path = lbp_nonface.get_paths()
-            else:
-                self.vector_path = np.concatenate((self.vector_path, lbp_nonface.get_paths()))
-            if self.vector_labels.shape[0] == 0:
-                self.vector_labels = np.full((lbp_face.get_paths().shape[0]), 0)
-            else:
-                self.vector_labels = np.concatenate((self.vector_labels, np.full((lbp_face.get_paths().shape[0]), 0)))
-            
-            
-
-        
-        vector_feature_temp = self.vector_feature.copy().astype(str).tolist()
-        vector_labels_temp = self.vector_labels.copy().astype(str).tolist()
-        vector_path_temp = self.vector_path.copy().tolist()
-
-        with open(self.data_json, "w") as f:
-            f.write(json.dumps(vector_feature_temp))
-            
-        with open(self.path_json, "w") as f:
-            f.write(json.dumps(vector_path_temp))
-
-        with open(self.labels_json, "w") as f:
-            f.write(json.dumps(vector_labels_temp))
-
-
-    def val(self):
-        vector_feature = None
-        vector_path = None
-        vector_labels = None
-        acc = 0
-        wra = 0
-        total = 0
-        batch = self.obj['batch']
-
-
-        # FACE
-        face = self.obj['val']['face']
-        number_face = self.obj['val']['img_face']
-
-        for image in tqdm(range(0, number_face, batch), "Extract Face"):
-            lbp_face = LBP(path= face, size= (112, 112), lim= batch, move= False)
-            if lbp_face.feature().shape[0] == 0:
-                continue
-            if vector_feature is None:
-                vector_feature = lbp_face.feature()
-            else:
-                vector_feature = np.concatenate((vector_feature, lbp_face.feature()))
-            if vector_path is None:
-                vector_path = lbp_face.get_paths()
-            else:
-                vector_path = np.concatenate((vector_path, lbp_face.get_paths()))
-            if vector_labels is None:
-                vector_labels = np.full((lbp_face.get_paths().shape[0]), 1)
-            else:
-                vector_labels = np.concatenate((vector_labels, np.full((lbp_face.get_paths().shape[0]), 1)))
-
-
-            
-        # NONFACE
-        nonface = self.obj['val']['nonface']
-        number_nonface = self.obj['val']['img_nonface']
-
-        for image in tqdm(range(0, number_nonface, batch), "Extract Nonface"):
-            lbp_nonface = LBP(path= nonface, size= (112, 112), lim= batch, move= False)
-            if lbp_nonface.feature().shape[0] == 0:
-                continue
-            if vector_feature is None:
-                vector_feature = lbp_nonface.feature()
-            else:
-                vector_feature = np.concatenate((vector_feature, lbp_nonface.feature()))
-            if vector_path is None:
-                vector_path = lbp_nonface.get_paths()
-            else:
-                vector_path = np.concatenate((vector_path, lbp_nonface.get_paths()))
-            if vector_labels is None:
-                vector_labels = np.full((lbp_face.get_paths().shape[0]), 0)
-            else:
-                vector_labels = np.concatenate((vector_labels, np.full((lbp_face.get_paths().shape[0]), 0)))
-        
-        for item, value in tqdm(enumerate(vector_feature), "evaluate"):
-
-            feature = value.copy().reshape(1, -1)
-            labels = int(vector_labels[item])
-            labels_predict = None
-
-            distance = cdist(self.vector_feature, feature)
-            indexs = np.arange(len(distance)).reshape(-1, 1)
-            result = np.concatenate((distance, indexs), axis=1)
-            indexs = result[np.argsort(result[:, 0])][:self.knn, 1].astype(int)
-
-            print(indexs)
-            founded_labels = self.vector_labels[indexs]
-            
-            ones = len(founded_labels[founded_labels == 1])
-            zeros = len(founded_labels[founded_labels == 0])  
-            if ones > zeros:
-                labels_predict = 1
-            else:
-                labels_predict = 0
-            if labels == labels_predict:
-                acc+=1
-            else:
-                wra+=1
-            total += 1
-        print(f"ACC: {acc}/{total}: {acc/total}%")

@@ -163,3 +163,4 @@ data/*
 document/*.pptx
 document/*.doc
 mysql/*
+annotations/*
