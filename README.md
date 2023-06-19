@@ -23,6 +23,6 @@ www.nada.kth.se/cvap/databases/kth-tips
 @MISC{KTHTIPS_Databases,
   author =	 "P.~Mallikarjuna, M.~Fritz, A.~Tavakoli~Targhi, E.~Hayman, B.~Caputo, and J.-O.~Eklundh",
   title =	 "The {KTH-TIPS} and {KTH-TIPS2} databases",
-  note =	 "Available at \texttt{www.nada.kth.se/cvap/databases/kth-tips}"
+  note =	 "Available at www.nada.kth.se/cvap/databases/kth-tips"
 }
 ```
