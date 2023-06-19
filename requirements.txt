@@ -3,3 +3,5 @@ scipy
 opencv-python
 matplotlib
 scikit-image
+scikit-learn
+tqdm

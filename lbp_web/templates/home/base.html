@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>LOGIN</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href={% static 'css/base.css' %}>
+
+        {% block extend_css %}{% endblock %}
+    </head>
+    <body>
+        
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+        <form method = "post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <main class="main_full">
+                <div class="container">
+                    <div class="panel">
+                        <div class="button_outer">
+                            <div class="btn_upload">
+                                <input name="upload_image" type="file" id="upload_file">
+                                Upload Image
+                            </div>
+                            <div class="processing_bar"></div>
+                            <div class="success_box"></div>
+                        </div>
+                        <button type="submit" style="justify-content: center;">GET</button>
+                    </div>
+                    <div class="error_msg"></div>
+                    <div class="uploaded_file_view" id="uploaded_view">
+                        <span class="file_remove">X</span>
+                    </div>
+                </div>
+            </main>
+            
+        </form>
+
+
+
+
+
+
+    </body>
+    <script src= {% static 'js/base.js' %}></script>
+    {% block extend_js %}{% endblock %}
+</html>
