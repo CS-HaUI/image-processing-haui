@@ -1,6 +1,7 @@
 numpy
 scipy
-opencv
+opencv-python
 matplotlib
 scikit-image
+scikit-learn
 tqdm

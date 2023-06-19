@@ -12,6 +12,45 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 import os
+import json
+import numpy as np
+from sklearn import svm
+from sklearn.metrics import accuracy_score
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from joblib import dump, load
+
+
+print("LOADING MODEL...")
+DATABASE_MODEL = np.asarray(json.load(open("C:\\code\\image-processing-haui\\lbp_web\\static\\model\\train.json")))
+X_MODEL = DATABASE_MODEL[:, :-1].astype(float)
+LABELS = DATABASE_MODEL[:, -1].reshape(-1, 1)
+Y_MODEL = LABELS.copy()
+
+
+diction = {'start': 1}
+k = []
+idx = 0
+for lbs in Y_MODEL:
+    if lbs[0] not in k:
+        k.append(lbs[0])
+        diction[lbs[0]] = str(idx)
+        idx += 1
+
+for index, value in enumerate(Y_MODEL):
+    Y_MODEL[index] = diction[value[0]]
+    
+Y_MODEL = Y_MODEL.astype(int).reshape(-1)
+print(Y_MODEL)
+print("END LOAD")
+
+print("TRAIN")
+# clf = make_pipeline(StandardScaler(), svm.SVC(gamma='auto'))
+# clf.fit(X_MODEL, Y_MODEL)
+print("END TRAIN")
+CLF = load('C:\\code\\image-processing-haui\\lbp_web\\svm_model.joblib')
+
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent

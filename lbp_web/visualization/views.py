@@ -1,63 +1,48 @@
-# from django.views.decorators import gzip
-# from django.http import StreamingHttpResponse
-# import cv2
-# import threading
-
-# class VideoCamera(object):
-#     def __init__(self):
-#         self.video = cv2.VideoCapture(0)
-#         (self.grabbed, self.frame) = self.video.read()
-#         threading.Thread(target=self.update, args=()).start()
-
-#     def __del__(self):
-#         self.video.release()
-
-#     def get_frame(self):
-#         image = self.frame
-#         _, jpeg = cv2.imencode('.jpg', image)
-#         return jpeg.tobytes()
-
-#     def update(self):
-#         while True:
-#             (self.grabbed, self.frame) = self.video.read()
-
-
-# def gen(camera):
-#     while True:
-#         frame = camera.get_frame()
-#         yield(b'--frame\r\n'
-#               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
-
-
-# @gzip.gzip_page
-# def live(request):
-#     try:
-#         cam = VideoCamera()
-#         return StreamingHttpResponse(gen(cam), content_type="multipart/x-mixed-replace;boundary=frame")
-#     except:  # This is bad! replace it with proper handling
-#         pass
+from PIL import Image
+import cv2
+import numpy as np
+from scipy.spatial.distance import cdist
+from skimage.feature import local_binary_pattern
 from django.shortcuts import render, redirect
 from django.template import loader
 from django.http import HttpResponse, HttpResponseRedirect
-
-
+from django.conf import settings
+from sklearn import svm
+from sklearn.metrics import accuracy_score
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
 import base64
-
+def histogram(img, bins):
+    h, _ = np.histogram(img, bins= bins, range=(0, bins))
+    h = (h - np.min(h)) / (np.max(h) - np.min(h))
+    return h
 
 def webcam(request):
     if (request.method == 'POST'):
-        try:
-            frame_ = request.POST.get('image')
-            frame_=str(frame_)
-            data=frame_.replace('data:image/jpeg;base64,','')
-            data=data.replace(' ', '+')
-            imgdata = base64.b64decode(data)
-            filename = 'some_image.jpg' 
-            with open(filename, 'wb') as f:
-                f.write(imgdata)
-        except:
-            print('Error')
+        image = Image.open(request.FILES['upload_image']).convert('RGB')
+        open_cv_image = np.array(image) 
+        open_cv_image = open_cv_image[:, :, ::-1].copy() 
+
+
+        h, s, v = cv2.split(cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2HSV))
+        gray = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
+        Y, cr, cb = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2YCrCb)
+
+        lbp_h1 = histogram(local_binary_pattern(h, 8, 1, 'uniform'), 59)
+        lbp_s1 = histogram(local_binary_pattern(s, 8, 1, 'uniform'), 59)
+        lbp_v1 = histogram(local_binary_pattern(v, 8, 1, 'uniform'), 59)
+        lbp_h2 = histogram(local_binary_pattern(h, 4, 1, 'uniform'), 16)
+        lbp_s2 = histogram(local_binary_pattern(s, 4, 1, 'uniform'), 16)
+        lbp_v2 = histogram(local_binary_pattern(v, 4, 1, 'uniform'), 16)
+        gray = histogram(local_binary_pattern(gray, 8, 1, 'uniform'), 59)
+        Y = histogram(local_binary_pattern(Y, 8, 1, 'uniform'), 59)
+        cr = histogram(local_binary_pattern(cr, 8, 1, 'uniform'), 59)
+        cb = histogram(local_binary_pattern(cb, 8, 1, 'uniform'), 59)
+
+        feature = np.concatenate((lbp_h1, lbp_s1, lbp_v1, lbp_h2, lbp_s2, lbp_v2)).reshape(1, -1)
+
+
 
     template = loader.get_template("home/base.html")
     context = {

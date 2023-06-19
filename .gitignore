@@ -165,3 +165,4 @@ document/*.doc
 mysql/*
 annotations/*
 test_cython/*
+*.docx

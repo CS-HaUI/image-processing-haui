@@ -1,54 +1,24 @@
-
-var canvas = document.getElementById('canvas');
-                var context = canvas.getContext('2d');
-                const video = document.querySelector("#videoElement");
-
-                video.width = 400;
-                video.height = 300;
-                if (navigator.mediaDevices.getUserMedia) {
-                    navigator.mediaDevices.getUserMedia({
-                            video: true
-                        })
-                        .then(function(stream) {
-
-
-                            video.srcObject = stream;
-                            video.play();
-                        })
-                        .catch(function(err0r) {
-
-                        });
-                }
-                var timeLeft = 5;
-                var timerId = setInterval(countdown, 1000);
-
-                function countdown() {
-                    if (timeLeft == 0) {
-                        clearTimeout(timerId);
-             
-                        return '..'
-                    } else {
-                        timeLeft--;
-                        width = video.width;
-                        height = video.height;
-                        context.drawImage(video, 0, 0, width, height);
-                        var dataa = canvas.toDataURL('image/jpeg', 0.5);
-                        context.clearRect(0, 0, width, height);
-                        $.ajax({
-                                type: 'POST',
-                                url: "{% url 'webcam'  %}",
-                                data: {
-                                    'image': data,
-                                    csrfmiddlewaretoken: '{{ csrf_token }}'
-                                },
-                                success: function(data) {
-                                    console.log(data)
-                                },
-                                error: function(response) {
-                                    console.log('Error')
-                                },
-                            }
-
-                        );
-                    }
-                }
+var btnUpload = $("#upload_file"),
+		btnOuter = $(".button_outer");
+	btnUpload.on("change", function(e){
+		var ext = btnUpload.val().split('.').pop().toLowerCase();
+		if($.inArray(ext, ['gif','png','jpg','jpeg']) == -1) {
+			$(".error_msg").text("Not an Image...");
+		} else {
+			$(".error_msg").text("");
+			btnOuter.addClass("file_uploading");
+			setTimeout(function(){
+				btnOuter.addClass("file_uploaded");
+			},3000);
+			var uploadedFile = URL.createObjectURL(e.target.files[0]);
+			setTimeout(function(){
+				$("#uploaded_view").append('<img src="'+uploadedFile+'" />').addClass("show");
+			},3500);
+		}
+	});
+	$(".file_remove").on("click", function(e){
+		$("#uploaded_view").removeClass("show");
+		$("#uploaded_view").find("img").remove();
+		btnOuter.removeClass("file_uploading");
+		btnOuter.removeClass("file_uploaded");
+	});
